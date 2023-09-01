@@ -1,6 +1,6 @@
 FROM golang AS build-forego
 
-RUN apt update && apt install -y git
+RUN apt update && apt install -y git jq
 
 WORKDIR /app
 
@@ -12,6 +12,8 @@ RUN git clone https://github.com/wahyd4/forego.git \
     && chmod +x forego
 
 FROM debian:stable-slim
+
+RUN apt update && apt install -y jq findutils
 
 LABEL AUTHOR=Junv<wahyd4@gmail.com>
 
@@ -38,10 +40,10 @@ ENV CADDY_LOG_LEVEL=INFO
 ENV RCLONE_AUTO_UPLOAD_PROVIDER=
 ENV RCLONE_AUTO_UPLOAD_REMOTE_PATH=/downloads
 ENV RCLONE_AUTO_UPLOAD_FILE_MIN_SIZE=1K
-ENV RCLONE_AUTO_UPLOAD_FILE_MAX_SIZE=100G
+ENV RCLONE_AUTO_UPLOAD_FILE_MAX_SIZE=50G
 ENV FIX_DATA_VOLUME_PERMISSIONS=false
 
-ADD install.sh aria2c.sh caddy.sh Procfile init.sh start.sh rclone.sh new-version-checker.sh APP_VERSION /app/
+ADD install.sh aria2c.sh proxytunnel.sh caddy.sh Procfile init.sh start.sh rclone.sh new-version-checker.sh APP_VERSION /app/
 ADD conf /app/conf
 ADD Caddyfile SecureCaddyfile HerokuCaddyfile /usr/local/caddy/
 
@@ -51,16 +53,10 @@ RUN ./install.sh
 
 RUN rm ./install.sh
 
-# For config files
-VOLUME /app/conf/
 
-# For file downloading
-VOLUME /data
+RUN ./init.sh
 
-# For rclone cache and aria2 DHT files
-VOLUME /app/.cache
-
-EXPOSE 80 443 6881
+EXPOSE 7860
 
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD curl -f http://localhost/ping || exit 1

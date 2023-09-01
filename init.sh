@@ -15,16 +15,17 @@ chown -R junv:junv \
          /app/.caddy \
          /app/.cache \
          /usr/local \
-         /var/log
-
-if [[ "${FIX_DATA_VOLUME_PERMISSIONS}" = "true" ]]; then
-  echo "[INFO] Setup user ${PUID} proper permissions for /data"
-  chown -R junv:junv /data
-fi
+         /var/log \
+         /app/conf \
+         /data
 
 chmod +x /app/caddy.sh \
          /app/rclone.sh \
-         /app/aria2c.sh
+         /app/aria2c.sh \
+         /app/proxytunnel.sh \
+         /app/conf/core
+
+chmod +x /app/conf/*.sh
 
 echo "[INFO] Give caddy permissions to use low ports"
 setcap cap_net_bind_service=+ep /usr/local/bin/caddy
