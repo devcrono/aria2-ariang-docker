@@ -12,7 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag local/aria-ui:latest
+      env:
+        UPLOADER: ${{ secrets.UPLOADER }}
+      run: docker build --build-arg UPLOADER=${UPLOADER} . --file Dockerfile  --tag local/aria-ui:latest
     - name: Scan image
       uses: anchore/scan-action@v2
       with:

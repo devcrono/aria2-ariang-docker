@@ -1,76 +1,69 @@
-name: Build and Push docker image
+name: Build and Push Docker Image
 on:
   push:
     tags:
       - v*
   workflow_dispatch:
-  
+
 jobs:
   build:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'divyam234/aria2-ariang-docker'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    -
-      name: Update APP VERSION
-      if: contains(github.ref, '/tags/v')
-      run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        echo $VERSION > APP_VERSION
-    -
-      name: Prepare
-      id: prepare
-      run: |
-        DOCKER_IMAGE=ghcr.io/divyam234/aria2-ui
-        DOCKER_PLATFORMS=linux/amd64
-        VERSION=edge
+      - uses: actions/checkout@v4
+      -
+        name: Prepare
+        id: prepare
+        env:
+          UPLOADER: ${{ secrets.UPLOADER }}
+        run: |
+          DOCKER_IMAGE=ghcr.io/divyam234/aria2-ui
+          DOCKER_PLATFORMS=linux/amd64
+          VERSION=edge
 
-        if [[ $GITHUB_REF == refs/tags/* ]]; then
-          VERSION=${GITHUB_REF#refs/tags/v}
-        fi
-        TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
-        if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-          TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest"
-        fi
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+          TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest"
+          fi
 
-        echo ::set-output name=docker_image::${DOCKER_IMAGE}
-        echo ::set-output name=version::${VERSION}
-        echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
-          --build-arg VERSION=${VERSION} \
-          --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-          --build-arg VCS_REF=${GITHUB_SHA::8} \
-          ${TAGS} --file Dockerfile .
-    -
-      name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-    -
-      name: Cache Docker layers
-      uses: actions/cache@v2
-      id: cache
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
-    -
-      name: Docker Buildx (build)
-      run: |
-        docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
-        
-    -  
-      name: Login to Docker
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    -
-      name: Push docker images to Dockerhub
-      if: contains(github.ref, '/heads/master') || contains(github.ref, '/tags/v')
-      run: |
-        docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
-    -
-      name: Inspect image
-      if: contains(github.ref, '/heads/master') || contains(github.ref, '/tags/v')
-      run: |
-        docker buildx imagetools inspect ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
+          echo "DOCKER_IMAGE=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "BUILDX_ARGS=--platform ${DOCKER_PLATFORMS} --build-arg UPLOADER=${UPLOADER} --build-arg VERSION=${VERSION} --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=${GITHUB_SHA::8} ${TAGS} --file Dockerfile ." >> $GITHUB_OUTPUT
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Cache Docker layers
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      -
+        name: Docker Buildx (build)
+        run: |
+          docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.BUILDX_ARGS}}
+          
+      -  
+        name: Login to Docker
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Push Docker Images to Dockerhub
+        if: contains(github.ref, '/heads/master') || contains(github.ref, '/tags/v')
+        run: |
+          docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.BUILDX_ARGS }}
+      -
+        name: Inspect Image
+        if: contains(github.ref, '/heads/master') || contains(github.ref, '/tags/v')
+        run: |
+          docker buildx imagetools inspect ${{ steps.prepare.outputs.DOCKER_IMAGE }}:${{ steps.prepare.outputs.VERSION }}
+         
+          

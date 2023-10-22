@@ -20,14 +20,6 @@ CHECK_CORE_FILE() {
     fi
 }
 
-
-CHECK_RCLONE() {
-    if [[ ${RCLONE_AUTO_UPLOAD_PROVIDER} == "" ]]; then
-    echo "[INFO] $(date -u +'%Y-%m-%dT%H:%M:%SZ') Upload  isn't enabled"
-    exit 0
-    fi
-}
-
 TASK_INFO() {
     echo -e "
 -------------------------- [${YELLOW_FONT_PREFIX}Task Infomation${FONT_COLOR_SUFFIX}] --------------------------
@@ -54,9 +46,9 @@ OUTPUT_UPLOAD_LOG() {
 DEFINITION_PATH() {
     LOCAL_PATH="${TASK_PATH}"
     if [[ -f "${TASK_PATH}" ]]; then
-       REMOTE_PATH="${RCLONE_AUTO_UPLOAD_PROVIDER}:${RCLONE_AUTO_UPLOAD_REMOTE_PATH}${DEST_PATH_SUFFIX%/*}"
+       REMOTE_PATH="${RCLONE_AUTO_UPLOAD_REMOTE_PATH}${DEST_PATH_SUFFIX%/*}"
     else
-        REMOTE_PATH="${RCLONE_AUTO_UPLOAD_PROVIDER}:${RCLONE_AUTO_UPLOAD_REMOTE_PATH}${DEST_PATH_SUFFIX}"
+        REMOTE_PATH="${RCLONE_AUTO_UPLOAD_REMOTE_PATH}${DEST_PATH_SUFFIX}"
     fi
 }
 
@@ -79,12 +71,13 @@ UPLOAD_FILE() {
             echo -e "$(DATE_TIME) ${ERROR} Upload failed! Retry ${RETRY}/${RETRY_NUM} ..."
             echo
         )
-        rclone move --config /app/conf/rclone.conf  -v "${LOCAL_PATH}" "${REMOTE_PATH}"
+        uploader -path "${LOCAL_PATH}" -dest "${REMOTE_PATH}"
         RCLONE_EXIT_CODE=$?
         if [ ${RCLONE_EXIT_CODE} -eq 0 ]; then
             UPLOAD_LOG="$(DATE_TIME) ${INFO} Upload done: ${LOCAL_PATH} -> ${REMOTE_PATH}"
             OUTPUT_UPLOAD_LOG
             DELETE_EMPTY_DIR
+            rm -rf "${LOCAL_PATH}"
             break
         else
             RETRY=$((${RETRY} + 1))
@@ -100,7 +93,6 @@ UPLOAD_FILE() {
 
 CHECK_CORE_FILE "$@"
 CHECK_SCRIPT_CONF
-CHECK_RCLONE "$@"
 CHECK_FILE_NUM
 GET_TASK_INFO
 GET_DOWNLOAD_DIR

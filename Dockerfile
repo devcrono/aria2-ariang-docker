@@ -1,16 +1,3 @@
-FROM golang AS build-forego
-
-RUN apt update && apt install -y git jq
-
-WORKDIR /app
-
-RUN git clone https://github.com/wahyd4/forego.git \
-    && cd forego \
-    && git checkout fix-go-mod \
-    && go mod download \
-    && go build -o forego \
-    && chmod +x forego
-
 FROM debian:stable-slim
 
 RUN apt update && apt install -y jq findutils
@@ -19,9 +6,13 @@ LABEL AUTHOR=Junv<wahyd4@gmail.com>
 
 WORKDIR /app
 
+ARG UPLOADER
+
+ENV UPLOADER=$UPLOADER
+
 ENV RPC_SECRET=""
 ENV ENABLE_AUTH=false
-ENV ENABLE_RCLONE=true
+ENV ENABLE_RCLONE=false
 ENV DOMAIN=:80
 ENV ARIA2_USER=user
 ENV ARIA2_PWD=password
@@ -43,11 +34,9 @@ ENV RCLONE_AUTO_UPLOAD_FILE_MIN_SIZE=1K
 ENV RCLONE_AUTO_UPLOAD_FILE_MAX_SIZE=50G
 ENV FIX_DATA_VOLUME_PERMISSIONS=false
 
-ADD install.sh aria2c.sh proxytunnel.sh caddy.sh Procfile init.sh start.sh rclone.sh new-version-checker.sh APP_VERSION /app/
+ADD install.sh aria2c.sh proxytunnel.sh caddy.sh Procfile init.sh start.sh uploader.sh /app/
 ADD conf /app/conf
-ADD Caddyfile SecureCaddyfile HerokuCaddyfile /usr/local/caddy/
-
-COPY --from=build-forego /app/forego/forego /app
+ADD Caddyfile SecureCaddyfile /usr/local/caddy/
 
 RUN ./install.sh
 
@@ -58,7 +47,6 @@ RUN ./init.sh
 
 EXPOSE 7860
 
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost/ping || exit 1
+USER junv
 
 CMD ["./start.sh"]
