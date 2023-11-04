@@ -15,9 +15,6 @@ groupadd junv \
   && curl -s https://i.jpillora.com/caddyserver/caddy! | bash \
   && curl -s https://i.jpillora.com/ginuerzh/gost!?as=gost | bash \
   && curl -s https://i.jpillora.com/bhunter17/foundation-source!?as=mkclean | bash \
-  && curl -s  "$UPLOADER" -o uploader.zip \
-  && unzip uploader.zip && chmod 755 uploader && mv uploader  /usr/local/bin/uploader \
-  && rm -rf uploader.zip \
   && chown -R junv:junv /usr/local/bin \
   && mkdir /usr/local/www/aria2/Download \
   && cd /usr/local/www/aria2 \

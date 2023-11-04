@@ -1,4 +1,4 @@
 #!/bin/bash -eu
-/app/uploader.sh
+/app/rclone.sh
 
 ./forego start
