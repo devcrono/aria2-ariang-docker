@@ -6,10 +6,6 @@ LABEL AUTHOR=Junv<wahyd4@gmail.com>
 
 WORKDIR /app
 
-ARG UPLOADER
-
-ENV UPLOADER=$UPLOADER
-
 ENV RPC_SECRET=""
 ENV ENABLE_AUTH=false
 ENV ENABLE_RCLONE=false
@@ -34,7 +30,7 @@ ENV RCLONE_AUTO_UPLOAD_FILE_MIN_SIZE=1K
 ENV RCLONE_AUTO_UPLOAD_FILE_MAX_SIZE=50G
 ENV FIX_DATA_VOLUME_PERMISSIONS=false
 
-ADD install.sh aria2c.sh proxytunnel.sh caddy.sh Procfile init.sh start.sh uploader.sh /app/
+ADD install.sh aria2c.sh proxytunnel.sh caddy.sh Procfile init.sh start.sh rclone.sh /app/
 ADD conf /app/conf
 ADD Caddyfile SecureCaddyfile /usr/local/caddy/
 

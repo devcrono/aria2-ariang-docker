@@ -13,8 +13,6 @@ jobs:
       -
         name: Prepare
         id: prepare
-        env:
-          UPLOADER: ${{ secrets.UPLOADER }}
         run: |
           DOCKER_IMAGE=ghcr.io/divyam234/aria2-ui
           DOCKER_PLATFORMS=linux/amd64
@@ -30,7 +28,7 @@ jobs:
 
           echo "DOCKER_IMAGE=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "BUILDX_ARGS=--platform ${DOCKER_PLATFORMS} --build-arg UPLOADER=${UPLOADER} --build-arg VERSION=${VERSION} --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=${GITHUB_SHA::8} ${TAGS} --file Dockerfile ." >> $GITHUB_OUTPUT
+          echo "BUILDX_ARGS=--platform ${DOCKER_PLATFORMS} --build-arg VERSION=${VERSION} --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=${GITHUB_SHA::8} ${TAGS} --file Dockerfile ." >> $GITHUB_OUTPUT
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
